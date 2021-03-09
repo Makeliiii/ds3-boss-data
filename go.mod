@@ -1,4 +1,4 @@
-module scraper
+module bossScraper
 
 go 1.16
 
