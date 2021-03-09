@@ -38,6 +38,12 @@ func main() {
 
 	// search for tbody element
 	c.OnHTML("tbody", func(e *colly.HTMLElement) {
+		// create headers and write them to csv
+		headers := []string{"Boss", "Location", "NPC Summoning", "Weakness", "Resistance", "Immunity", "Parryable", "Optional"}
+		err := writer.Write(headers)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		// loop through rows and create a boss for each
 		e.ForEach("tr", func(_ int, row *colly.HTMLElement) {
@@ -52,7 +58,7 @@ func main() {
 				Optional: row.ChildText("td:nth-child(8)"),
 			}
 
-
+			// make a slice out of the boss struct
 			boss := make([]string, 0)
 			for _, key := range fatih.Values(newBoss) {
 				boss = append(boss, key.(string))
