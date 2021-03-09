@@ -4,11 +4,28 @@ import (
 	"fmt"
 	"os"
 	"encoding/csv"
+	"log"
 	"github.com/gocolly/colly"
+	fatih "github.com/fatih/structs"
 	structs "bossScraper/structs"
 )
 
 func main() {
+	// create a file to store boss data
+	file, err := os.Create("data/bosses.csv")
+
+	// check file creation error
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// wait for func to return then close file
+	defer file.Close()
+
+	// create a writer, wait for func to return and write
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
 	// create a collector
 	c := colly.NewCollector(
 		colly.AllowedDomains("darksouls3.wiki.fextralife.com"),
@@ -19,14 +36,12 @@ func main() {
 		fmt.Println("Visiting", r.URL.String())
 	})
 
-	// create a slice to store bosses
-	bosses := []structs.Boss{}
-
 	// search for tbody element
 	c.OnHTML("tbody", func(e *colly.HTMLElement) {
+
 		// loop through rows and create a boss for each
 		e.ForEach("tr", func(_ int, row *colly.HTMLElement) {
-			boss := structs.Boss {
+			newBoss := structs.Boss {
 				Boss: row.ChildText("td:nth-child(1)"),
 				Location: row.ChildText("td:nth-child(2)"),
 				NPCSummoning: row.ChildText("td:nth-child(3)"),
@@ -37,10 +52,18 @@ func main() {
 				Optional: row.ChildText("td:nth-child(8)"),
 			}
 
-			// append boss to bosses
-			bosses = append(bosses, boss)
+
+			boss := make([]string, 0)
+			for _, key := range fatih.Values(newBoss) {
+				boss = append(boss, key.(string))
+			}
+
+			// write to csv and check for err
+			err := writer.Write(boss)
+			if err != nil {
+				log.Fatal(err)
+			}
 		})
-		fmt.Println(bosses)
 	})
 
 	// url to scrape
